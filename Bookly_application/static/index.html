@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bookly Support</title>
+<style>
+  :root { --bg:#f6f4ef; --card:#fff; --ink:#1f2328; --muted:#6b7280; --line:#e5e1d8;
+          --brand:#7a4b2a; --user:#7a4b2a; --bot:#f1ede6; --yellow:#f4c430; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; font:14px/1.45 -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--ink);
+         display:flex; flex-direction:column; }
+  header { padding:12px 20px; border-bottom:1px solid var(--line); background:var(--card);
+           display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .brand { display:flex; align-items:center; gap:8px; }
+  .logo-badge { width:32px; height:32px; border-radius:9px; background:var(--yellow); color:var(--ink);
+                font-weight:800; font-size:17px; display:flex; align-items:center; justify-content:center;
+                flex-shrink:0; }
+  .logo-book { font-size:18px; line-height:1; }
+  header h1 { margin:0; font-size:19px; color:var(--brand); }
+  #mode { font-size:12px; padding:3px 8px; border-radius:999px; background:var(--bot); color:var(--muted); }
+  .user-chip { font-size:12px; padding:3px 10px; border-radius:999px; background:#eef2ff; color:#3730a3; }
+  details.data { margin-left:auto; font-size:12px; color:var(--muted); position:relative; }
+  details.data table { border-collapse:collapse; margin-top:6px; background:var(--card); }
+  details.data td, details.data th { border:1px solid var(--line); padding:3px 6px; text-align:left; }
+  details.history-dd summary { list-style:none; cursor:pointer; }
+  details.history-dd summary::-webkit-details-marker { display:none; }
+  #history-list { position:absolute; right:0; top:calc(100% + 6px); background:var(--card); border:1px solid var(--line);
+                  border-radius:8px; min-width:220px; max-width:300px; max-height:320px; overflow-y:auto;
+                  box-shadow:0 6px 18px rgba(0,0,0,0.08); z-index:10; padding:4px; }
+  .history-row { display:flex; align-items:center; gap:2px; }
+  .history-item { flex:1; min-width:0; text-align:left; background:none; border:0; border-radius:6px;
+                  padding:8px 10px; cursor:pointer; color:var(--ink); font-size:13px;
+                  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .history-item:hover { background:var(--bg); }
+  .history-item.active { background:var(--bot); font-weight:600; }
+  .history-delete { flex-shrink:0; border:0; background:none; color:var(--muted); cursor:pointer;
+                     padding:6px 8px; border-radius:6px; font-size:12px; line-height:1; }
+  .history-delete:hover { background:#fde2e2; color:#b91c1c; }
+  .history-empty { padding:10px; color:var(--muted); font-size:12px; }
+  #new-chat { font-size:12px; border:1px solid var(--line); background:none; border-radius:6px;
+              padding:5px 10px; cursor:pointer; color:var(--muted); }
+  main { flex:1; display:flex; flex-direction:column; min-height:0; }
+  #chatArea { display:none; flex:1; min-height:0; overflow-y:auto; }
+  #log { max-width:720px; width:100%; margin:0 auto; padding:16px; display:flex; flex-direction:column; gap:8px; }
+  .msg { max-width:88%; padding:8px 11px; border-radius:12px; white-space:pre-wrap; }
+  .user { align-self:flex-end; background:var(--user); color:#fff; border-bottom-right-radius:3px; }
+  .bot { align-self:flex-start; background:var(--bot); border-bottom-left-radius:3px; }
+  .typing { color:var(--muted); font-style:italic; }
+  #composer { display:flex; flex-direction:column; align-items:center; gap:14px; padding:24px 20px; flex:1;
+              justify-content:center; }
+  .welcome { max-width:460px; text-align:center; margin:0; }
+  .welcome h2 { margin:0 0 6px; font-size:26px; font-weight:700; color:var(--brand); letter-spacing:-0.01em; }
+  .welcome p { margin:0; color:var(--muted); font-size:14px; }
+  #composer form { display:flex; gap:8px; width:100%; max-width:560px; }
+  input { flex:1; padding:11px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; }
+  form button { background:var(--brand); color:#fff; border:0; border-radius:8px; padding:0 16px; cursor:pointer; }
+
+  body.started #composer { flex:none; justify-content:flex-start; padding:12px 20px;
+                            border-top:1px solid var(--line); background:var(--card); }
+  body.started #chatArea { display:flex; }
+  body.started .welcome { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="logo-badge">B</span>
+    <span class="logo-book" aria-hidden="true">&#128214;</span>
+    <h1>Bookly Support</h1>
+  </div>
+  <span id="mode">loading...</span>
+  <span class="user-chip" id="user-chip">Logged in as &hellip;</span>
+  <details class="data"><summary>Demo orders</summary><table id="orders"></table></details>
+  <details class="data history-dd">
+    <summary>History</summary>
+    <div id="history-list"></div>
+  </details>
+  <button type="button" id="new-chat">New chat</button>
+</header>
+<main>
+  <div id="chatArea"><div class="log" id="log"></div></div>
+  <div id="composer">
+    <div class="welcome">
+      <h2>Welcome to Bookly Support</h2>
+      <p>You can ask me questions regarding Order Status, Refund or Return, or anything else regarding your order.</p>
+    </div>
+    <form id="chat-form">
+      <input id="chat-input" placeholder="Ask about an order, a return, or anything else..." autocomplete="off">
+      <button>Send</button>
+    </form>
+  </div>
+</main>
+
+<script>
+const STORAGE_KEY = "bookly_chats_v2";
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()));
+
+let state = { chats: [], activeId: null };
+
+function esc(s) { return String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const saved = raw ? JSON.parse(raw) : null;
+    if (saved && Array.isArray(saved.chats)) {
+      state = saved;
+    }
+  } catch (e) { /* ignore corrupt local storage */ }
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function activeChat() {
+  return state.chats.find(c => c.id === state.activeId) || null;
+}
+
+function titleFromText(text) {
+  const t = text.trim().replace(/\s+/g, " ");
+  return t.length > 40 ? t.slice(0, 40) + "…" : t;
+}
+
+function renderMsg(who, text) {
+  const log = document.getElementById("log");
+  const el = document.createElement("div");
+  el.className = "msg " + who;
+  el.innerHTML = esc(text);
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+  return el;
+}
+
+function renderLog() {
+  const log = document.getElementById("log");
+  log.innerHTML = "";
+  const chat = activeChat();
+  if (chat) chat.messages.forEach(m => renderMsg(m.who, m.text));
+}
+
+function renderHistory() {
+  const list = document.getElementById("history-list");
+  const chats = [...state.chats].reverse();
+  if (!chats.length) {
+    list.innerHTML = '<div class="history-empty">No previous chats yet.</div>';
+    return;
+  }
+  list.innerHTML = "";
+  chats.forEach(chat => {
+    const row = document.createElement("div");
+    row.className = "history-row";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "history-item" + (chat.id === state.activeId ? " active" : "");
+    btn.textContent = chat.title || "New chat";
+    btn.title = chat.title || "New chat";
+    btn.onclick = () => {
+      document.querySelector("details.history-dd").removeAttribute("open");
+      openChat(chat.id);
+    };
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "history-delete";
+    del.title = "Delete this chat";
+    del.textContent = "✕";
+    del.onclick = (e) => {
+      e.stopPropagation();
+      deleteChat(chat.id);
+    };
+    row.appendChild(btn);
+    row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+
+function deleteChat(id) {
+  const idx = state.chats.findIndex(c => c.id === id);
+  if (idx === -1) return;
+  const chat = state.chats[idx];
+  state.chats.splice(idx, 1);
+  if (state.activeId === id) {
+    state.activeId = null;
+    document.body.classList.remove("started");
+    document.getElementById("log").innerHTML = "";
+  }
+  saveState();
+  renderHistory();
+  fetch(`/api/session/${chat.sessionId}`, { method: "DELETE" }).catch(() => {});
+}
+
+function showChat() {
+  document.body.classList.add("started");
+}
+
+function openChat(id) {
+  state.activeId = id;
+  saveState();
+  const chat = activeChat();
+  if (chat && chat.messages.length) {
+    showChat();
+    renderLog();
+  } else {
+    document.body.classList.remove("started");
+    document.getElementById("log").innerHTML = "";
+  }
+  renderHistory();
+  document.getElementById("chat-input").focus();
+}
+
+function startNewChat() {
+  const chat = { id: uid(), sessionId: uid(), title: "", messages: [] };
+  state.chats.push(chat);
+  state.activeId = chat.id;
+  saveState();
+  document.getElementById("log").innerHTML = "";
+  document.body.classList.remove("started");
+  renderHistory();
+  document.getElementById("chat-input").focus();
+}
+
+async function send(text) {
+  if (!text.trim()) return;
+  let chat = activeChat();
+  if (!chat) {
+    chat = { id: uid(), sessionId: uid(), title: "", messages: [] };
+    state.chats.push(chat);
+    state.activeId = chat.id;
+  }
+  if (!chat.title) chat.title = titleFromText(text);
+  showChat();
+  chat.messages.push({ who: "user", text });
+  renderMsg("user", text);
+  saveState();
+  renderHistory();
+  const typing = renderMsg("bot typing", "...");
+  try {
+    const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: chat.sessionId, message: text }) });
+    const j = await r.json();
+    typing.remove();
+    const replyText = j.reply || j.error || "Sorry, something went wrong.";
+    chat.messages.push({ who: "bot", text: replyText });
+    renderMsg("bot", replyText);
+    saveState();
+    // The reply may have come from an action that mutated order data (cancel, address
+    // change, ...), so refresh the Demo orders table to reflect it instead of showing a stale
+    // page-load snapshot.
+    refreshInfo();
+  } catch (e) {
+    typing.remove();
+    renderMsg("bot", "Sorry, I couldn't reach the server. Is app.py still running?");
+  }
+}
+
+(() => {
+  loadState();
+  const chat = activeChat();
+  if (chat && chat.messages.length) {
+    showChat();
+    renderLog();
+  }
+  renderHistory();
+
+  document.getElementById("chat-form").onsubmit = e => {
+    e.preventDefault();
+    const input = document.getElementById("chat-input");
+    const v = input.value;
+    input.value = "";
+    send(v);
+  };
+  document.getElementById("new-chat").onclick = startNewChat;
+})();
+
+const fmtDate = iso => iso ? new Date(iso + "T00:00:00Z").toLocaleDateString("en-US",
+  { timeZone: "UTC", weekday: "short", month: "short", day: "2-digit" }) : "-";
+
+async function refreshInfo() {
+  try {
+    const info = await (await fetch("/api/info")).json();
+    document.getElementById("mode").textContent = info.mode;
+    document.getElementById("user-chip").textContent = `Logged in as ${info.user.name}`;
+    document.getElementById("user-chip").title = info.user.email;
+    document.getElementById("orders").innerHTML =
+      "<tr><th>Order</th><th>Email</th><th>Status</th><th>Placed</th><th>Shipped</th><th>Delivered</th>" +
+      "<th>ETA</th><th>Carrier</th><th>Tracking</th><th>Items</th><th>Mailing address</th></tr>" +
+      info.orders.map(o => `<tr><td>${o.order_id}</td><td>${o.email}</td><td>${o.status}</td>` +
+        `<td>${fmtDate(o.placed_on)}</td><td>${fmtDate(o.shipped_on)}</td><td>${fmtDate(o.delivered_on)}</td>` +
+        `<td>${fmtDate(o.eta)}</td><td>${esc(o.carrier || "-")}</td><td>${esc(o.tracking || "-")}</td>` +
+        `<td>${esc(o.items)}</td><td>${esc(o.mailing_address || "")}</td></tr>`).join("");
+  } catch (e) { document.getElementById("mode").textContent = "server not reachable"; }
+}
+
+refreshInfo();
+</script>
+</body>
+</html>
